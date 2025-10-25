@@ -36,8 +36,6 @@ const playSound = (type) => {
   }
 };
 
-
-
 export default function HireOrNot() {
   const [gameState, setGameState] = useState('intro');
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -62,6 +60,7 @@ export default function HireOrNot() {
   const handleDragEnd = () => {
     if (!isDragging) return;
     setIsDragging(false);
+    
     const threshold = 100;
     if (dragOffset > threshold) {
       handleDecision(true);
@@ -73,12 +72,7 @@ export default function HireOrNot() {
 
   const handleDecision = (hired) => {
     playSound(hired ? 'swipe-right' : 'swipe-left');
-    setDecisions([...decisions, { 
-      name: currentProfile.name, 
-      hired,
-      type: currentProfile.type,
-      profileId: currentProfile.id
-    }]);
+    setDecisions([...decisions, { name: currentProfile.name, hired }]);
     setShowReveal(true);
     setTimeout(() => playSound('reveal'), 300);
   };
@@ -92,6 +86,7 @@ export default function HireOrNot() {
     }
   };
 
+  // 开始页面
   if (gameState === 'intro') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-500 via-purple-500 to-indigo-600 flex items-center justify-center p-4">
@@ -126,121 +121,52 @@ export default function HireOrNot() {
     );
   }
 
+  // 结束页面
   if (gameState === 'finished') {
-    // 计算正确数
-    let correctCount = 0;
-    decisions.forEach(d => {
-      if ((d.type === 'real' && d.hired) || (d.type === 'fake' && !d.hired)) {
-        correctCount++;
-      }
-    });
-    
-    const totalCount = decisions.length;
-    const score = Math.round((correctCount / totalCount) * 100);
-    
-    // 获取评级
-    let rating = { title: '未知', emoji: '❓', desc: '评级错误' };
-    if (score === 100) {
-      rating = { title: '传奇伯乐', emoji: '🏆', desc: '完美！雇佣所有传奇，拒绝所有AI陷阱' };
-    } else if (score >= 70) {
-      rating = { title: '慧眼识珠', emoji: '💎', desc: '你几乎识别了所有传奇！' };
-    } else if (score >= 50) {
-      rating = { title: '合格HR', emoji: '👍', desc: '识别出了大部分真正的人才' };
-    } else if (score >= 30) {
-      rating = { title: '普通筛选者', emoji: '👔', desc: '表现中规中矩，但错失了一些机会' };
-    } else if (score > 0) {
-      rating = { title: '新手HR', emoji: '📋', desc: '需要更多训练才能识别人才' };
-    } else {
-      rating = { title: '人力资源灾难', emoji: '💀', desc: '你错过了所有传奇，还雇佣了AI' };
-    }
-    
-    // 统计
-    const realHired = decisions.filter(d => d.type === 'real' && d.hired).length;
-    const realRejected = decisions.filter(d => d.type === 'real' && !d.hired).length;
-    const fakeHired = decisions.filter(d => d.type === 'fake' && d.hired).length;
-    const fakeRejected = decisions.filter(d => d.type === 'fake' && !d.hired).length;
+    const hiredCount = decisions.filter(d => d.hired).length;
+    const score = Math.round((hiredCount / PROFILES.length) * 100);
     
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center p-4">
         <div className="bg-white rounded-3xl shadow-2xl p-8 max-w-lg w-full">
           <div className="text-center mb-6">
-            <div className="text-8xl mb-4">{rating.emoji}</div>
-            <h2 className="text-4xl font-bold text-gray-800 mb-2">{rating.title}</h2>
-            <p className="text-lg text-gray-600">{rating.desc}</p>
+            <div className="text-8xl mb-4">🏆</div>
+            <h2 className="text-4xl font-bold text-gray-800 mb-2">游戏结束</h2>
+            <p className="text-6xl font-bold text-purple-600 my-4">{score}</p>
           </div>
-
-          <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-2xl p-6 mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-gray-700 text-lg font-semibold">综合得分</span>
-              <div className="text-center">
-                <div className="text-6xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">{score}</div>
-                <div className="text-sm text-gray-500 mt-1">满分100</div>
-              </div>
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div className="bg-green-50 rounded-2xl p-5 text-center">
+              <div className="text-4xl mb-2">✅</div>
+              <div className="text-3xl font-bold text-green-600">{hiredCount}</div>
+              <div className="text-sm text-gray-600">雇佣</div>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-4 mb-3">
-              <div 
-                className="bg-gradient-to-r from-purple-500 to-pink-500 h-4 rounded-full transition-all duration-1000"
-                style={{ width: `${score}%` }}
-              />
-            </div>
-            <div className="text-sm text-gray-600 text-center">
-              正确决策：{correctCount} / {totalCount}
+            <div className="bg-red-50 rounded-2xl p-5 text-center">
+              <div className="text-4xl mb-2">❌</div>
+              <div className="text-3xl font-bold text-red-600">{PROFILES.length - hiredCount}</div>
+              <div className="text-sm text-gray-600">拒绝</div>
             </div>
           </div>
-
-          <div className="space-y-3 mb-6">
-            <div className="bg-green-50 rounded-xl p-4 border-2 border-green-200">
-              <h3 className="font-bold text-gray-800 mb-2 text-sm">✅ 真实简历（传奇人物）</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="text-green-700">✅ 雇佣：{realHired}</div>
-                <div className="text-red-700">❌ 拒绝：{realRejected}</div>
-              </div>
-            </div>
-            
-            <div className="bg-amber-50 rounded-xl p-4 border-2 border-amber-200">
-              <h3 className="font-bold text-gray-800 mb-2 text-sm">🤖 AI虚拟简历</h3>
-              <div className="grid grid-cols-2 gap-2 text-sm">
-                <div className="text-red-700">✅ 雇佣：{fakeHired}</div>
-                <div className="text-green-700">❌ 拒绝：{fakeRejected}</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-gray-50 rounded-2xl p-4 mb-6">
-            <h4 className="font-bold text-gray-800 mb-3 text-sm">📊 决策记录</h4>
-            {decisions.map((d, i) => (
-              <div key={i} className="flex justify-between items-center text-xs py-2 border-b last:border-0">
-                <div>
-                  <span className="font-medium">{d.name}</span>
-                  <span className={`ml-2 px-2 py-0.5 rounded ${d.type === 'real' ? 'bg-blue-100 text-blue-700' : 'bg-orange-100 text-orange-700'}`}>
-                    {d.type === 'real' ? '真实' : 'AI'}
-                  </span>
-                </div>
-                <span className={`px-2 py-1 rounded ${
-                  (d.type === 'real' && d.hired) || (d.type === 'fake' && !d.hired)
-                    ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                }`}>
-                  {d.hired ? '✅雇佣' : '❌拒绝'}
-                </span>
-              </div>
-            ))}
-          </div>
-
           <button
             onClick={() => window.location.reload()}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-2xl font-bold text-lg"
           >
-            🔄 再玩一次
+            再玩一次
           </button>
         </div>
       </div>
     );
   }
 
+  // 游戏进行中 - 确保有数据
   if (!currentProfile) {
-    return <div className="min-h-screen bg-red-500 text-white flex items-center justify-center">数据错误</div>;
+    return (
+      <div className="min-h-screen bg-red-500 flex items-center justify-center text-white">
+        <div>错误: 无法加载数据 currentIndex={currentIndex}</div>
+      </div>
+    );
   }
 
+  // 简历卡片视图
   if (!showReveal) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-500 flex flex-col items-center justify-center p-4">
@@ -284,6 +210,7 @@ export default function HireOrNot() {
           </div>
 
           <div className="p-6 max-h-[480px] overflow-y-auto">
+            {/* 教育背景 */}
             <div className="mb-5">
               <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2 text-base border-b border-gray-200 pb-2">
                 <Award size={18} className="text-purple-500" /> 教育背景
@@ -300,6 +227,7 @@ export default function HireOrNot() {
               ))}
             </div>
 
+            {/* 工作经历 */}
             <div className="mb-5">
               <h3 className="font-bold text-gray-800 mb-3 flex items-center gap-2 text-base border-b border-gray-200 pb-2">
                 <Briefcase size={18} className="text-purple-500" /> 工作经历
@@ -313,30 +241,50 @@ export default function HireOrNot() {
                   <div className="text-sm text-gray-700 mb-2">{exp.company}</div>
                   <ul className="space-y-1">
                     {exp.details.map((detail, j) => (
-                      <li key={j} className="text-xs leading-relaxed text-gray-600">• {detail}</li>
+                      <li key={j} className={`text-xs leading-relaxed ${
+                        detail.includes('失败') || detail.includes('解雇') || detail.includes('困难') || 
+                        detail.includes('阻力') || detail.includes('排除') || detail.includes('破产') ||
+                        detail.includes('未被采纳') || detail.includes('被搁置') || detail.includes('惨淡') ||
+                        detail.includes('亏损') || detail.includes('卫生问题')
+                          ? 'text-red-600' : 'text-gray-600'
+                      }`}>
+                        • {detail}
+                      </li>
                     ))}
                   </ul>
                 </div>
               ))}
             </div>
 
+            {/* 专业技能 */}
             <div className="mb-5">
               <h3 className="font-bold text-gray-800 mb-3 text-base border-b border-gray-200 pb-2">专业技能</h3>
               <div className="space-y-2">
                 {Object.entries(currentProfile.skills).map(([category, skills]) => (
                   <div key={category} className="text-xs">
-                    <span className="font-semibold text-gray-700">{category}：</span>
+                    <span className="font-semibold text-gray-700">
+                      {category === 'product' ? '产品' : 
+                       category === 'analysis' ? '分析' : 
+                       category === 'tools' ? '工具' :
+                       category === 'technical' ? '技术' :
+                       category === 'design' ? '设计' :
+                       category === 'business' ? '商业' :
+                       category === 'soft' ? '软技能' :
+                       category === 'other' ? '其他' : category}：
+                    </span>
                     <span className="text-gray-600 ml-1">{skills}</span>
                   </div>
                 ))}
               </div>
             </div>
 
+            {/* 语言能力 */}
             <div className="mb-5">
               <h3 className="font-bold text-gray-800 mb-2 text-base border-b border-gray-200 pb-2">语言能力</h3>
               <p className="text-xs text-gray-600">{currentProfile.languages}</p>
             </div>
 
+            {/* 自我陈述 */}
             <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl border-l-4 border-purple-400">
               <h4 className="font-bold text-gray-800 mb-2 text-sm">求职信节选</h4>
               <p className="text-xs text-gray-700 leading-relaxed italic">{currentProfile.statement}</p>
@@ -347,6 +295,7 @@ export default function HireOrNot() {
     );
   }
 
+  // 彩蛋揭晓视图
   return (
     <div className="min-h-screen bg-gradient-to-br from-pink-400 via-purple-400 to-indigo-500 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md mb-4">
@@ -365,18 +314,21 @@ export default function HireOrNot() {
         </div>
 
         <div className="p-6 max-h-[500px] overflow-y-auto">
+          {/* 真实身份 */}
           <div className="text-center mb-6 pb-5 border-b-2 border-gray-100">
             <h3 className="text-3xl font-bold text-gray-800 mb-3">{currentProfile.name}</h3>
             <p className="text-base text-purple-600 font-semibold leading-relaxed">{currentProfile.title}</p>
           </div>
 
+          {/* 故事 */}
           <div className="mb-5">
             <h4 className="font-bold text-gray-800 mb-3 text-base flex items-center gap-2 border-b border-gray-200 pb-2">
-              📖 故事
+              📖 背后故事
             </h4>
             <p className="text-sm text-gray-700 leading-relaxed">{currentProfile.story}</p>
           </div>
 
+          {/* 真相 */}
           <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-2xl p-5 mb-5 border-l-4 border-amber-400">
             <h4 className="font-bold text-gray-800 mb-3 text-base flex items-center gap-2">
               💡 真相
@@ -386,6 +338,7 @@ export default function HireOrNot() {
             </p>
           </div>
 
+          {/* 按钮 */}
           <button
             onClick={handleNext}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white py-4 rounded-2xl font-bold text-lg hover:shadow-2xl transition-all transform hover:scale-105"
