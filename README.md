@@ -67,7 +67,7 @@
 ## 🚀 本地运行
 ```bash
 # 克隆项目
-git clone https://github.com/your-username/hire-or-not.git
+git clone https://github.com/momo2049/hire-or-not.git
 cd hire-or-not
 
 # 安装依赖
